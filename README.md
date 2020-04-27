@@ -1,7 +1,6 @@
-# Lab_4_Proyecto
-# Microestructuras y Sistemas de Trading
-# Ingeniería Financiera. Instituto Tecnológico y de Estudios Superiores de Occidente
-## Proyecto Final: Análisis Fundamental. 
+# Proyecto Final: Análisis Fundamental. 
+## Microestructuras y Sistemas de Trading
+## Ingeniería Financiera. Instituto Tecnológico y de Estudios Superiores de Occidente
 
 # Indicador Indices de precios al consumidor (MoM)
 
