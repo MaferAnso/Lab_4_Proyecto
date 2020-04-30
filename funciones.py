@@ -9,6 +9,7 @@
 
 import pandas as pd
 import numpy as np
+import procesos as pr
 
 
 # -- -------------------------------------------------------------- FUNCION: Leer archivo -- #
@@ -145,3 +146,5 @@ def f_clasificacion_ocurrencia(param_data):
     df_D = pd.DataFrame(list(zip(date, actual, con, prev)), index=d)
     df_D.columns = ('Date', 'Actual', 'Consensus', 'Previus')
     return df_A, df_B, df_C, df_D
+
+def 
