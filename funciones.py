@@ -10,6 +10,9 @@
 import pandas as pd
 import numpy as np
 import procesos as pr
+from datos import OA_Ak
+import datetime
+from datetime import datetime as dt
 
 
 # -- -------------------------------------------------------------- FUNCION: Leer archivo -- #
@@ -41,6 +44,7 @@ def f_leer_archivo(param_archivo):
     numcols = ['actual', 'previous', 'desv', 'cons']
 
     df_data[numcols] = df_data[numcols].apply(pd.to_numeric)
+    df_data['date'] = [dt.strptime(df_data['date'][i], '%m/%d/%Y %H:%M:%S') for i in range(df_data.shape[0])]
 
     return df_data
 
@@ -55,8 +59,8 @@ def f_clasificacion_ocurrencia(param_data):
     param_data : str : DataFrame base
     Returns
     -------
-    df_clasificacion : pd.DataFrame : con información de calsificacion de ocurrencia A,B,C,D
-    Debugging
+    df_A,df_A, df_B, df_C, df_D : pd.DataFrame : con información de calsificacion de
+    ocurrencia A,B,C,D
     ---------
     param_data = df_data
 
@@ -147,4 +151,36 @@ def f_clasificacion_ocurrencia(param_data):
     df_D.columns = ('Date', 'Actual', 'Consensus', 'Previus')
     return df_A, df_B, df_C, df_D
 
-def 
+# -- -------------------------------------------------------- FUNCION: Descargar precios  -- #
+# -- ------------------------------------------------------------------------------------ -- #
+def precios(param_data):
+    '''
+
+    Parameters
+    ----------
+    param_data : str : DataFrame base
+    Returns
+    -------
+    df_precios : pd.DataFrame :
+        ---------
+        param_data = df_data
+
+        '''
+    min30 = datetime.timedelta(minutes=32)
+    min1 = datetime.timedelta(minutes=1)
+    # token de OANDA
+    OA_In = "EUR_USD"  # Instrumento
+    OA_Gn = "M1"  # Granularidad de velas
+    fini = pd.to_datetime(param_data.iloc[0, 0] + min1).tz_localize('GMT')  # Fecha inicial
+    ffin = pd.to_datetime(param_data.iloc[0, 0] + min30).tz_localize('GMT')  # Fecha final
+    df_pe = pr.f_precios_masivos(p0_fini=fini, p1_ffin=ffin, p2_gran=OA_Gn,
+                                 p3_inst=OA_In, p4_oatk=OA_Ak, p5_ginc=4900)
+    for i in range(5):
+        if i > 0:
+            fini = pd.to_datetime(param_data.iloc[i, 0] + min1).tz_localize('GMT')  # Fecha inicial
+            ffin = pd.to_datetime(param_data.iloc[i, 0] + min30).tz_localize('GMT')  # Fecha final
+            df_pe1 = pr.f_precios_masivos(p0_fini=fini, p1_ffin=ffin, p2_gran=OA_Gn,
+                                          p3_inst=OA_In, p4_oatk=OA_Ak, p5_ginc=4900)
+
+            df_pe = pd.concat([df_pe, df_pe1])
+    return
