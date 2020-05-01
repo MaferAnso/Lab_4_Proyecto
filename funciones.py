@@ -153,7 +153,7 @@ def f_clasificacion_ocurrencia(param_data):
 
 # -- -------------------------------------------------------- FUNCION: Descargar precios  -- #
 # -- ------------------------------------------------------------------------------------ -- #
-def precios(param_data):
+def f_precios(param_data):
     '''
 
     Parameters
@@ -165,7 +165,12 @@ def precios(param_data):
         ---------
         param_data = df_data
 
-        '''
+    '''
+    # Verificar que no haya viernes, despues de 4, sabado o domingo antes de 4
+    index = []
+    for i in range(param_data.shape[0]):
+        if param_data.iloc[i, 0].weekday() == 5 or param_data.iloc[i, 0].weekday() == 6:
+            index.append(i)
     min30 = datetime.timedelta(minutes=32)
     min1 = datetime.timedelta(minutes=1)
     # token de OANDA
@@ -175,12 +180,12 @@ def precios(param_data):
     ffin = pd.to_datetime(param_data.iloc[0, 0] + min30).tz_localize('GMT')  # Fecha final
     df_pe = pr.f_precios_masivos(p0_fini=fini, p1_ffin=ffin, p2_gran=OA_Gn,
                                  p3_inst=OA_In, p4_oatk=OA_Ak, p5_ginc=4900)
-    for i in range(5):
-        if i > 0:
+    a = []
+    for i in range(param_data.shape[0]):
+        if i > 0 and i != index[0] and i != index[1]:
             fini = pd.to_datetime(param_data.iloc[i, 0] + min1).tz_localize('GMT')  # Fecha inicial
             ffin = pd.to_datetime(param_data.iloc[i, 0] + min30).tz_localize('GMT')  # Fecha final
             df_pe1 = pr.f_precios_masivos(p0_fini=fini, p1_ffin=ffin, p2_gran=OA_Gn,
                                           p3_inst=OA_In, p4_oatk=OA_Ak, p5_ginc=4900)
-
             df_pe = pd.concat([df_pe, df_pe1])
-    return
+    return df_pe
