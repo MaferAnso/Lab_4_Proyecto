@@ -189,3 +189,118 @@ def f_precios(param_data):
                                           p3_inst=OA_In, p4_oatk=OA_Ak, p5_ginc=4900)
             df_pe = pd.concat([df_pe, df_pe1])
     return df_pe
+
+
+# ESTADISTICA
+# -- -------------------------------------------------------------- FUNCION: Autocorrelación -- #
+# -- ------------------------------------------------------------------------------------ -- #
+# -- Determina la autocorrelación que hay en la serie
+from statsmodels.tsa.stattools import acf
+from statsmodels.tsa.stattools import pacf
+
+
+def f_autocorrelation(param_data):
+    """
+
+    Parameters
+    ----------
+    param_data : DataFrame con los datos del precio del indicador
+    Returns
+    -------
+    autocorrelation : pd.DataFrame : con informacion contenida en archivo leido
+    Debugging
+    ---------
+    param_data = df_data
+
+    """
+    data = param_data['actual']
+    acf_array = acf(data, nlags=20, qstat=True)
+    autocorrelation = data.autocorr()
+    part_acf = pacf(data, nlags=20)
+
+    # df_ba = pd.DataFrame(index=['p-value'], columns=['FAC', 'FACP'])
+    # df_ba.loc['p-value', 'FAC'] = autocorrelation
+    # df_ba.loc['p-value', 'FACP'] = autocorrelation
+
+    return {acf_array[2], part_acf}
+
+
+# -- -------------------------------------------------------------- FUNCION: Heterocedasticidad -- #
+# -- ------------------------------------------------------------------------------------ -- #
+# -- Determina la heterocedasticidad que hay en la serie
+import statsmodels.api as sm
+import statsmodels.stats.diagnostic as smd
+import scipy.stats as st
+from statsmodels.tsa.stattools import adfuller
+
+def f_hetero(param_data):
+    """
+    Parameters
+    ----------
+    param_data : DataFrame con los datos del precio del indicador
+    Returns
+    -------
+    heterokedasticity : valores para vereficar la heterocedasticidad de la serie
+    Debugging
+    ---------
+    param_data = df_data
+    """
+    data = param_data['actual']
+    #hetero = sm.OLS(data, sm.add_constant(data.index)).fit()
+    #res = hetero.resid
+    #bp_test = smd.het_breuschpagan(res, hetero.model.exog)
+    bp_test = smd.het_arch(data)
+    labels = ['LM Statistic', 'LM-Test p-value', 'F-Statistic', 'F-Test p-value']
+    heterokedasticity = [dict(zip(labels, bp_test))]
+    return heterokedasticity
+
+
+# -- -------------------------------------------------------------- FUNCION: Prueba de normalidad -- #
+# -- ------------------------------------------------------------------------------------ -- #
+# -- Determina si la serie es normal
+def f_normality_test(param_data):
+    """
+    Parameters
+    ----------
+    param_data : DataFrame con los datos del precio del indicador
+    Returns
+    -------
+    p_value : str : Si los datos son normales o no
+    Debugging
+    ---------
+    param_data = df_data
+    """
+    data = param_data['actual']
+    k2, p = st.normaltest(data) # prueba de normalidad con D’Agostino and Pearson’s tests
+    shapiro, ps = st.shapiro(data) # prueba de normalidad con Shapiro-Wilk test
+    alpha = .05  # Es con un intervalo de confianza del 95%
+    if p < alpha and ps < alpha:
+        return "p-value = ", p, "La hipótesis nula se rechaza"
+    else:
+        return "p-value = ", p, "La hipótesis nula no se rechaza"
+
+# -- -------------------------------------------------------------- FUNCION: Prueba de estacionariedad -- #
+# -- ------------------------------------------------------------------------------------ -- #
+# -- Determina si la serie es estacionaria
+def f_estacionaria(param_data):
+    """
+
+    Parameters
+    ----------
+    param_data : DataFrame con los datos del precio del indicador
+    Returns
+    -------
+    p_value : str : Si los datos son estacionarios o no
+    Debugging
+    ---------
+    param_data = df_data
+    """
+    data = param_data['actual']
+    result = adfuller(data)
+    p_value = result[1]
+    alpha = .05  # Es con un intervalo de confianza del 95%
+    if p_value < alpha:
+        return "p-value = ", p_value, "La hipótesis nula se rechaza"
+    else:
+        return "p-value = ", p_value, "La hipótesis nula no se rechaza"
+
