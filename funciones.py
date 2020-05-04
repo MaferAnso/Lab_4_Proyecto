@@ -18,7 +18,6 @@ from datetime import datetime as dt
 # -- -------------------------------------------------------------- FUNCION: Leer archivo -- #
 # -- ------------------------------------------------------------------------------------ -- #
 # -- Leer un archivo externo en Excel
-
 def f_leer_archivo(param_archivo):
     '''
 
@@ -51,6 +50,7 @@ def f_leer_archivo(param_archivo):
 
 # -- ---------------------------------------------------------- FUNCION: Clasificar datos -- #
 # -- ------------------------------------------------------------------------------------ -- #
+# -- Clasifica datos en A, B, C, D
 def f_clasificacion_ocurrencia(param_data):
     '''
 
@@ -153,6 +153,7 @@ def f_clasificacion_ocurrencia(param_data):
 
 # -- -------------------------------------------------------- FUNCION: Descargar precios  -- #
 # -- ------------------------------------------------------------------------------------ -- #
+# -- Descarga precios de los 30 minutos despues que sale el indicador
 def f_precios(param_data):
     '''
 
@@ -176,20 +177,56 @@ def f_precios(param_data):
     # token de OANDA
     OA_In = "EUR_USD"  # Instrumento
     OA_Gn = "M1"  # Granularidad de velas
-    fini = pd.to_datetime(param_data.iloc[0, 0] + min1).tz_localize('GMT')  # Fecha inicial
+    fini = pd.to_datetime(param_data.iloc[0, 0]).tz_localize('GMT')  # Fecha inicial
     ffin = pd.to_datetime(param_data.iloc[0, 0] + min30).tz_localize('GMT')  # Fecha final
     df_pe = pr.f_precios_masivos(p0_fini=fini, p1_ffin=ffin, p2_gran=OA_Gn,
                                  p3_inst=OA_In, p4_oatk=OA_Ak, p5_ginc=4900)
     a = []
     for i in range(param_data.shape[0]):
         if i > 0 and i != index[0] and i != index[1]:
-            fini = pd.to_datetime(param_data.iloc[i, 0] + min1).tz_localize('GMT')  # Fecha inicial
+            fini = pd.to_datetime(param_data.iloc[i, 0]).tz_localize('GMT')  # Fecha inicial
             ffin = pd.to_datetime(param_data.iloc[i, 0] + min30).tz_localize('GMT')  # Fecha final
             df_pe1 = pr.f_precios_masivos(p0_fini=fini, p1_ffin=ffin, p2_gran=OA_Gn,
                                           p3_inst=OA_In, p4_oatk=OA_Ak, p5_ginc=4900)
             df_pe = pd.concat([df_pe, df_pe1])
+            df_pe = df_pe.reset_index(drop=True)
     return df_pe
+# -- -------------------------------------------------------------- FUNCION: Direccion -- #
+# -- ------------------------------------------------------------------------------------ -- #
+# -- Determina la direccion de precios
+def f_direccion(param_data):
+    """
+    Parameters
+    ----------
+    param_data : DataFrame con los datos del precio del indicador
+    Returns
+    -------
+    df_direccion : pd.DataFrame : con informacion contenida en archivo leido
+    Debugging
+    ---------
+    param_data = df_data
+    """
+    # Separar dias
+    dia_fin = []
+    fecha = []
+    for i in range(param_data.shape[0]):
+        if i < (param_data.shape[0] - 1) and param_data['TimeStamp'][i].date() != param_data['TimeStamp'][i + 1].date():
+            dia_fin.append(i)
+            fecha.append(param_data['TimeStamp'][i].date())
+        if i == (param_data.shape[0] - 1):
+            dia_fin.append(i)
+            fecha.append(param_data['TimeStamp'][i].date())
+    # obtener direccion
+    direccion = []
+    for k in range(len(dia_fin)):
+        if k == 0:
+            direccion.append(param_data['Close'][dia_fin[k]] - param_data['Open'][dia_fin[k] - 30])
+        if k > 0:
+            direccion.append(param_data['Close'][dia_fin[k]] - param_data['Open'][dia_fin[k - 1] + 1])
 
+    df_direccion = pd.DataFrame(list(zip(fecha, direccion)))
+    df_direccion.columns = ('TimeStamp', 'Direccion')
+    return df_direccion
 
 # ESTADISTICA
 # -- -------------------------------------------------------------- FUNCION: Autocorrelación -- #
