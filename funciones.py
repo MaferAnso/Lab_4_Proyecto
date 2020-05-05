@@ -43,7 +43,8 @@ def f_leer_archivo(param_archivo):
     numcols = ['actual', 'previous', 'desv', 'cons']
 
     df_data[numcols] = df_data[numcols].apply(pd.to_numeric)
-    df_data['date'] = [dt.strptime(df_data['date'][i], '%m/%d/%Y %H:%M:%S') for i in range(df_data.shape[0])]
+    df_data['date'] = [dt.strptime(df_data['date'][i], '%m/%d/%Y %H:%M:%S')\
+                       for i in range(df_data.shape[0])]
 
     return df_data
 
@@ -51,7 +52,7 @@ def f_leer_archivo(param_archivo):
 # -- ---------------------------------------------------------- FUNCION: Clasificar datos -- #
 # -- ------------------------------------------------------------------------------------ -- #
 # -- Clasifica datos en A, B, C, D
-def f_clasificacion_ocurrencia(param_data):
+def f_clasificacion(param_data):
     '''
 
     Parameters
@@ -59,7 +60,7 @@ def f_clasificacion_ocurrencia(param_data):
     param_data : str : DataFrame base
     Returns
     -------
-    df_A,df_A, df_B, df_C, df_D : pd.DataFrame : con información de calsificacion de
+    df_clase : pd.DataFrame : con información de calsificacion de
     ocurrencia A,B,C,D
     ---------
     param_data = df_data
@@ -69,6 +70,11 @@ def f_clasificacion_ocurrencia(param_data):
     # B	Actual >= Consensus < Previous
     # C	Actual < Consensus >= Previous
     # D	Actual < Consensus < Previous
+    # Revisar fecha no tenga viernes en tarde, sabado y domingo en mañana
+    index = []
+    for i in range(param_data.shape[0]):
+        if param_data.iloc[i, 0].weekday() == 5 or param_data.iloc[i, 0].weekday() == 6:
+            index.append(i)
     # Revisar que si exista NaN en previus poner actual
     for i in range(param_data.shape[0]):
         if np.isnan(param_data['previous'][i]):
@@ -80,76 +86,23 @@ def f_clasificacion_ocurrencia(param_data):
             param_data['cons'][i] = param_data['previous'][i]
 
     # Clasificar
-    a = [(i) for i in range(param_data.shape[0]) if param_data['actual'][i] \
-         >= param_data['cons'][i] >= param_data['previous'][i]]
-    b = [(i) for i in range(param_data.shape[0]) if param_data['actual'][i] \
-         >= param_data['cons'][i] < param_data['previous'][i]]
-    c = [(i) for i in range(param_data.shape[0]) if param_data['actual'][i] \
-         < param_data['cons'][i] >= param_data['previous'][i]]
-    d = [(i) for i in range(param_data.shape[0]) if param_data['actual'][i] \
-         < param_data['cons'][i] < param_data['previous'][i]]
+    clasificacion = []
+    fecha = []
+    for i in range(param_data.shape[0]):
+        if param_data['actual'][i] >= param_data['cons'][i] >= param_data['previous'][i] and (i in index) == False:
+            clasificacion.append('A')
+        if param_data['actual'][i] >= param_data['cons'][i] < param_data['previous'][i] and (i in index) == False:
+            clasificacion.append('B')
+        if param_data['actual'][i] < param_data['cons'][i] >= param_data['previous'][i] and (i in index) == False:
+            clasificacion.append('C')
+        if param_data['actual'][i] < param_data['cons'][i] < param_data['previous'][i] and (i in index) == False:
+            clasificacion.append('C')
+        if (i in index) == False:
+            fecha.append(param_data['date'][i].date())
 
-    # Tabla informacion datos A
-    date = [];
-    actual = [];
-    con = [];
-    prev = []
-    for k in range(len(a)):
-        for x in range(param_data.shape[0]):
-            if a[k] == x:
-                date.append(param_data['date'][x])
-                actual.append(param_data['actual'][x])
-                con.append(param_data['cons'][x])
-                prev.append(param_data['previous'][x])
-
-    df_A = pd.DataFrame(list(zip(date, actual, con, prev)), index=a)
-    df_A.columns = ('Date', 'Actual', 'Consensus', 'Previus')
-    # Tabla informacion datos B
-    date = [];
-    actual = [];
-    con = [];
-    prev = []
-    for k in range(len(b)):
-        for x in range(param_data.shape[0]):
-            if b[k] == x:
-                date.append(param_data['date'][x])
-                actual.append(param_data['actual'][x])
-                con.append(param_data['cons'][x])
-                prev.append(param_data['previous'][x])
-
-    df_B = pd.DataFrame(list(zip(date, actual, con, prev)), index=b)
-    df_B.columns = ('Date', 'Actual', 'Consensus', 'Previus')
-    # Tabla informacion datos   C
-    date = [];
-    actual = [];
-    con = [];
-    prev = []
-    for k in range(len(c)):
-        for x in range(param_data.shape[0]):
-            if c[k] == x:
-                date.append(param_data['date'][x])
-                actual.append(param_data['actual'][x])
-                con.append(param_data['cons'][x])
-                prev.append(param_data['previous'][x])
-
-    df_C = pd.DataFrame(list(zip(date, actual, con, prev)), index=c)
-    df_C.columns = ('Date', 'Actual', 'Consensus', 'Previus')
-    # Tabla informacion datos D
-    date = [];
-    actual = [];
-    con = [];
-    prev = []
-    for k in range(len(d)):
-        for x in range(param_data.shape[0]):
-            if d[k] == x:
-                date.append(param_data['date'][x])
-                actual.append(param_data['actual'][x])
-                con.append(param_data['cons'][x])
-                prev.append(param_data['previous'][x])
-
-    df_D = pd.DataFrame(list(zip(date, actual, con, prev)), index=d)
-    df_D.columns = ('Date', 'Actual', 'Consensus', 'Previus')
-    return df_A, df_B, df_C, df_D
+    df_clase = pd.DataFrame(list(zip(fecha, clasificacion)))
+    df_clase.columns = ('TimeStamp', 'Escenario')
+    return df_clase
 
 
 # -- -------------------------------------------------------- FUNCION: Descargar precios  -- #
@@ -174,7 +127,6 @@ def f_precios(param_data):
         if param_data.iloc[i, 0].weekday() == 5 or param_data.iloc[i, 0].weekday() == 6:
             index.append(i)
     min30 = datetime.timedelta(minutes=32)
-    min1 = datetime.timedelta(minutes=1)
     # token de OANDA
     OA_In = "EUR_USD"  # Instrumento
     OA_Gn = "M1"  # Granularidad de velas
@@ -194,17 +146,17 @@ def f_precios(param_data):
     return df_pe
 
 
-# -- -------------------------------------------------------------- FUNCION: Direccion -- #
+# -- ------------------------------------------------------------------ FUNCION: Metricas -- #
 # -- ------------------------------------------------------------------------------------ -- #
-# -- Determina la direccion de precios
-def f_direccion(param_data):
+# -- Determina la direccion de precios, pips alcistas, pips bajistas, volatilidad
+def f_metrica(param_data):
     """
     Parameters
     ----------
     param_data : DataFrame con los datos del precio del indicador
     Returns
     -------
-    df_direccion : pd.DataFrame : con informacion contenida en archivo leido
+    df_metricas : pd.DataFrame : con informacion contenida en archivo leido
     Debugging
     ---------
     param_data = df_data
@@ -223,13 +175,41 @@ def f_direccion(param_data):
     direccion = []
     for k in range(len(dia_fin)):
         if k == 0:
-            direccion.append(param_data['Close'][dia_fin[k]] - param_data['Open'][dia_fin[k] - 30])
+            direccion.append((param_data['Close'][dia_fin[k]] -
+                              param_data['Open'][dia_fin[k] - 30])*10000)
         if k > 0:
-            direccion.append(param_data['Close'][dia_fin[k]] - param_data['Open'][dia_fin[k - 1] + 1])
+            direccion.append(param_data['Close'][dia_fin[k]] -
+                             param_data['Open'][dia_fin[k - 1] + 1]*10000)
 
-    df_direccion = pd.DataFrame(list(zip(fecha, direccion)))
-    df_direccion.columns = ('TimeStamp', 'Direccion')
-    return df_direccion
+    # Pips alcista y Pips bajista y Volatilidad
+    maxi = []
+    mini = []
+    op = [param_data['Open'][0]]
+    for g in range(len(dia_fin)):
+        if g <= 0:
+            col = param_data['High'][g:dia_fin[g] + 1]
+            col2 = param_data['Low'][g:dia_fin[g] + 1]
+            maxi.append(col.max())
+            mini.append(col2.min())
+        if g > 0:
+            col = param_data['High'][dia_fin[g - 1] + 1:dia_fin[g] + 1]
+            col2 = param_data['Low'][dia_fin[g - 1] + 1:dia_fin[g] + 1]
+            maxi.append(col.max())
+            mini.append(col2.min())
+    for m in range(len(dia_fin)):
+        if m <= 155:
+            op.append(param_data['Open'][dia_fin[m] + 1])
+    al = []
+    baj = []
+    vol = []
+    for k in range(len(op)):
+        al.append((maxi[k] - op[k])*10000) # Pips alcistas
+        baj.append((op[k] - mini[k])*10000) # Pips bajistas
+        vol.append((maxi[k]-mini[k])*10000) # Volatilidad
+    df_metricas = pd.DataFrame(list(zip(fecha,direccion,al,baj,vol)))
+    df_metricas.columns = ('TimeStamp','Direccion', 'Pip Alcista', 'Pip Bajista', 'Volatilidad')
+
+    return df_metricas
 
 
 # ESTADISTICA
