@@ -151,6 +151,7 @@ def f_clasificacion_ocurrencia(param_data):
     df_D.columns = ('Date', 'Actual', 'Consensus', 'Previus')
     return df_A, df_B, df_C, df_D
 
+
 # -- -------------------------------------------------------- FUNCION: Descargar precios  -- #
 # -- ------------------------------------------------------------------------------------ -- #
 # -- Descarga precios de los 30 minutos despues que sale el indicador
@@ -191,6 +192,8 @@ def f_precios(param_data):
             df_pe = pd.concat([df_pe, df_pe1])
             df_pe = df_pe.reset_index(drop=True)
     return df_pe
+
+
 # -- -------------------------------------------------------------- FUNCION: Direccion -- #
 # -- ------------------------------------------------------------------------------------ -- #
 # -- Determina la direccion de precios
@@ -228,14 +231,19 @@ def f_direccion(param_data):
     df_direccion.columns = ('TimeStamp', 'Direccion')
     return df_direccion
 
+
 # ESTADISTICA
+from statsmodels.tsa.stattools import acf
+from statsmodels.tsa.stattools import pacf
+import statsmodels.api as sm
+import statsmodels.stats.diagnostic as smd
+import scipy.stats as st
+from statsmodels.tsa.stattools import adfuller
+
+
 # -- -------------------------------------------------------------- FUNCION: Autocorrelación -- #
 # -- ------------------------------------------------------------------------------------ -- #
 # -- Determina la autocorrelación que hay en la serie
-from statsmodels.tsa.stattools import acf
-from statsmodels.tsa.stattools import pacf
-
-
 def f_autocorrelation(param_data):
     """
 
@@ -254,22 +262,12 @@ def f_autocorrelation(param_data):
     acf_array = acf(data, nlags=20, qstat=True)
     autocorrelation = data.autocorr()
     part_acf = pacf(data, nlags=20)
-
-    # df_ba = pd.DataFrame(index=['p-value'], columns=['FAC', 'FACP'])
-    # df_ba.loc['p-value', 'FAC'] = autocorrelation
-    # df_ba.loc['p-value', 'FACP'] = autocorrelation
-
-    return {acf_array[2], part_acf}
+    return {acf_array, part_acf}
 
 
 # -- -------------------------------------------------------------- FUNCION: Heterocedasticidad -- #
 # -- ------------------------------------------------------------------------------------ -- #
 # -- Determina la heterocedasticidad que hay en la serie
-import statsmodels.api as sm
-import statsmodels.stats.diagnostic as smd
-import scipy.stats as st
-from statsmodels.tsa.stattools import adfuller
-
 def f_hetero(param_data):
     """
     Parameters
@@ -283,9 +281,9 @@ def f_hetero(param_data):
     param_data = df_data
     """
     data = param_data['actual']
-    #hetero = sm.OLS(data, sm.add_constant(data.index)).fit()
-    #res = hetero.resid
-    #bp_test = smd.het_breuschpagan(res, hetero.model.exog)
+    # hetero = sm.OLS(data, sm.add_constant(data.index)).fit()
+    # res = hetero.resid
+    # bp_test = smd.het_breuschpagan(res, hetero.model.exog)
     bp_test = smd.het_arch(data)
     labels = ['LM Statistic', 'LM-Test p-value', 'F-Statistic', 'F-Test p-value']
     heterokedasticity = [dict(zip(labels, bp_test))]
@@ -308,13 +306,14 @@ def f_normality_test(param_data):
     param_data = df_data
     """
     data = param_data['actual']
-    k2, p = st.normaltest(data) # prueba de normalidad con D’Agostino and Pearson’s tests
-    shapiro, ps = st.shapiro(data) # prueba de normalidad con Shapiro-Wilk test
+    k2, p = st.normaltest(data)  # prueba de normalidad con D’Agostino and Pearson’s tests
+    shapiro, ps = st.shapiro(data)  # prueba de normalidad con Shapiro-Wilk test
     alpha = .05  # Es con un intervalo de confianza del 95%
     if p < alpha and ps < alpha:
         return "p-value = ", p, "La hipótesis nula se rechaza"
     else:
         return "p-value = ", p, "La hipótesis nula no se rechaza"
+
 
 # -- -------------------------------------------------------------- FUNCION: Prueba de estacionariedad -- #
 # -- ------------------------------------------------------------------------------------ -- #
@@ -340,4 +339,3 @@ def f_estacionaria(param_data):
         return "p-value = ", p_value, "La hipótesis nula se rechaza"
     else:
         return "p-value = ", p_value, "La hipótesis nula no se rechaza"
-
