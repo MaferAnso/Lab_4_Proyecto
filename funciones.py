@@ -96,7 +96,7 @@ def f_clasificacion(param_data):
         if param_data['actual'][i] < param_data['cons'][i] >= param_data['previous'][i] and (i in index) == False:
             clasificacion.append('C')
         if param_data['actual'][i] < param_data['cons'][i] < param_data['previous'][i] and (i in index) == False:
-            clasificacion.append('C')
+            clasificacion.append('D')
         if (i in index) == False:
             fecha.append(param_data['date'][i].date())
 
@@ -258,7 +258,7 @@ import scipy.stats as st
 from statsmodels.tsa.stattools import adfuller
 
 
-# -- -------------------------------------------------------------- FUNCION: Autocorrelación -- #
+# -- ----------------------------------------------------------- FUNCION: Autocorrelación -- #
 # -- ------------------------------------------------------------------------------------ -- #
 # -- Determina la autocorrelación que hay en la serie
 def f_autocorrelation(param_data):
@@ -282,7 +282,7 @@ def f_autocorrelation(param_data):
     return {acf_array, part_acf}
 
 
-# -- -------------------------------------------------------------- FUNCION: Heterocedasticidad -- #
+# -- -------------------------------------------------------- FUNCION: Heterocedasticidad -- #
 # -- ------------------------------------------------------------------------------------ -- #
 # -- Determina la heterocedasticidad que hay en la serie
 def f_hetero(param_data):
@@ -307,7 +307,7 @@ def f_hetero(param_data):
     return heterokedasticity
 
 
-# -- -------------------------------------------------------------- FUNCION: Prueba de normalidad -- #
+# -- ------------------------------------------------------ FUNCION: Prueba de normalidad -- #
 # -- ------------------------------------------------------------------------------------ -- #
 # -- Determina si la serie es normal
 def f_normality_test(param_data):
@@ -332,7 +332,7 @@ def f_normality_test(param_data):
         return "p-value = ", p, "La hipótesis nula no se rechaza"
 
 
-# -- -------------------------------------------------------------- FUNCION: Prueba de estacionariedad -- #
+# -- ------------------------------------------------- FUNCION: Prueba de estacionariedad -- #
 # -- ------------------------------------------------------------------------------------ -- #
 # -- Determina si la serie es estacionaria
 def f_estacionaria(param_data):
@@ -356,3 +356,43 @@ def f_estacionaria(param_data):
         return "p-value = ", p_value, "La hipótesis nula se rechaza"
     else:
         return "p-value = ", p_value, "La hipótesis nula no se rechaza"
+
+# ESTRATEGIA
+# -- ---------------------------------------------------------------- FUNCION: Decisiones -- #
+# -- ------------------------------------------------------------------------------------ -- #
+# -- Determina las estrategias que se tomaran para hacer trading
+def f_decisiones(param_data):
+    """
+    Parameters
+    ----------
+    param_data: DataFrame con informacion de escenarios
+
+    Returns
+    -------
+    df_decisiones: DataFrame con informacion resultante
+
+    Debugging
+    ---------
+    """
+    # Obtener resumen
+    param = pr.f_resumen_escenarios(param_data)
+    # Obtener estrategia
+    operacion = []
+    sl = []
+    tp = []
+    for i in range(param.shape[0]):
+        if param['Direccion Positiva'][i] > param['Direccion Negativa'][i]:
+            operacion.append('Compra')
+            tp.append(round(param['Pip Alcistas'][i]+param['Volatilidad'][i]))
+            sl.append(round(param['Pip Bajistas'][i]+param['Volatilidad'][i]))
+        else:
+            operacion.append('Venta')
+            sl.append(round(param['Pip Alcistas'][i] + param['Volatilidad'][i]))
+            tp.append(round(param['Pip Bajistas'][i] + param['Volatilidad'][i]))
+
+    df_decision = {'Escenario': ['A','B','C','D'],
+                  'Operacion': operacion, 'sl': sl,'tp':tp}
+    df_decision = pd.DataFrame(df_decision)
+
+
+    return df_decision
