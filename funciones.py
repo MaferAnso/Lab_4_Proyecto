@@ -165,7 +165,8 @@ def f_metrica(param_data):
     dia_fin = []
     fecha = []
     for i in range(param_data.shape[0]):
-        if i < (param_data.shape[0] - 1) and param_data['TimeStamp'][i].date() != param_data['TimeStamp'][i + 1].date():
+        if i < (param_data.shape[0] - 1) and param_data['TimeStamp'][i].date() != \
+                param_data['TimeStamp'][i + 1].date():
             dia_fin.append(i)
             fecha.append(param_data['TimeStamp'][i].date())
         if i == (param_data.shape[0] - 1):
@@ -173,13 +174,22 @@ def f_metrica(param_data):
             fecha.append(param_data['TimeStamp'][i].date())
     # obtener direccion
     direccion = []
+    dir1 = []
     for k in range(len(dia_fin)):
         if k == 0:
             direccion.append((param_data['Close'][dia_fin[k]] -
                               param_data['Open'][dia_fin[k] - 30])*10000)
+            if param_data['Close'][dia_fin[k]] > param_data['Open'][dia_fin[k] - 30]:
+                dir1.append(1)
+            else:
+                dir1.append(-1)
         if k > 0:
             direccion.append(param_data['Close'][dia_fin[k]] -
                              param_data['Open'][dia_fin[k - 1] + 1]*10000)
+            if param_data['Close'][dia_fin[k]] > param_data['Open'][dia_fin[k] - 30]:
+                dir1.append(1)
+            else:
+                dir1.append(-1)
 
     # Pips alcista y Pips bajista y Volatilidad
     maxi = []
@@ -206,11 +216,38 @@ def f_metrica(param_data):
         al.append((maxi[k] - op[k])*10000) # Pips alcistas
         baj.append((op[k] - mini[k])*10000) # Pips bajistas
         vol.append((maxi[k]-mini[k])*10000) # Volatilidad
-    df_metricas = pd.DataFrame(list(zip(fecha,direccion,al,baj,vol)))
+    df_metricas = pd.DataFrame(list(zip(fecha,dir1,al,baj,vol)))
     df_metricas.columns = ('TimeStamp','Direccion', 'Pip Alcista', 'Pip Bajista', 'Volatilidad')
 
     return df_metricas
 
+# -- ---------------------------------------------------------------- FUNCION: Escenarios -- #
+# -- ------------------------------------------------------------------------------------ -- #
+# -- Muestra tabla completa de escenarios en tiempo de trainin
+def f_escenarios(param_metricas,param_clasificacion, fini,ffin):
+    """
+    Parameters
+    ----------
+    param_metricas: DataFrame con metricas de precios
+    param_clasificacion: DataFrame con clasificacion indice
+    fini: Fecha inicial de entranmiento
+    ffin: Fecha final de entranamiento
+    Returns
+    -------
+    df_escenarios : pd.DataFrame : con informacion contenida en archivo leido
+    Debugging
+    ---------
+    param_data = df_data
+    """
+    df = pd.concat([param_clasificacion, param_metricas['Direccion'],
+                    param_metricas['Pip Alcista'], param_metricas['Pip Bajista'],
+                    param_metricas['Volatilidad']], axis=1)
+
+    Index = [i for i in range(df.shape[0]) if fini <= df['TimeStamp'][i] <= ffin]
+    df_escenarios = df.iloc[Index[0]:Index[len(Index) - 1], :]
+    df_escenarios = df_escenarios.reset_index(drop=True)
+
+    return df_escenarios
 
 # ESTADISTICA
 from statsmodels.tsa.stattools import acf
