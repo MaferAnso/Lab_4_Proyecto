@@ -79,9 +79,7 @@ def f_clasificacion(param_data):
     for i in range(param_data.shape[0]):
         if np.isnan(param_data['previous'][i]):
             param_data['previous'][i] = param_data['actual'][i]
-
     # Revisar que si exista NaN en consensus poner previus
-    for i in range(param_data.shape[0]):
         if np.isnan(param_data['cons'][i]):
             param_data['cons'][i] = param_data['previous'][i]
 
@@ -89,13 +87,17 @@ def f_clasificacion(param_data):
     clasificacion = []
     fecha = []
     for i in range(param_data.shape[0]):
-        if param_data['actual'][i] >= param_data['cons'][i] >= param_data['previous'][i] and (i in index) == False:
+        if param_data['actual'][i] >= param_data['cons'][i] >= \
+                param_data['previous'][i] and (i in index) == False:
             clasificacion.append('A')
-        if param_data['actual'][i] >= param_data['cons'][i] < param_data['previous'][i] and (i in index) == False:
+        if param_data['actual'][i] >= param_data['cons'][i] < \
+                param_data['previous'][i] and (i in index) == False:
             clasificacion.append('B')
-        if param_data['actual'][i] < param_data['cons'][i] >= param_data['previous'][i] and (i in index) == False:
+        if param_data['actual'][i] < param_data['cons'][i] >= \
+                param_data['previous'][i] and (i in index) == False:
             clasificacion.append('C')
-        if param_data['actual'][i] < param_data['cons'][i] < param_data['previous'][i] and (i in index) == False:
+        if param_data['actual'][i] < param_data['cons'][i] < \
+                param_data['previous'][i] and (i in index) == False:
             clasificacion.append('D')
         if (i in index) == False:
             fecha.append(param_data['date'][i].date())
@@ -391,8 +393,29 @@ def f_decisiones(param_data):
             tp.append(round(param['Pip Bajistas'][i] + param['Volatilidad'][i]))
 
     df_decision = {'Escenario': ['A','B','C','D'],
-                  'Operacion': operacion, 'sl': sl,'tp':tp}
+                  'Operacion': operacion, 'sl': [30,20,20,25], 'tp':[50,40,40,60],
+                   'Volumen':[1500,1000,2000,2500],}
     df_decision = pd.DataFrame(df_decision)
 
 
     return df_decision
+def f_back_test(param_precios,param_escenarios_param_decisiones):
+    #param_precios = df_pe
+    #param_escenarios = df_escenarios
+    #param_decisiones = df_decisiones
+    esc = [];
+    op = [];
+    vol = [];
+    dia_fin = []
+    for i in range(param_precios.shape[0]):
+        if i < (param_precios.shape[0] - 1) and param_precios['TimeStamp'][i].date() != \
+                param_precios['TimeStamp'][i + 1].date():
+            dia_fin.append(i)
+        if i == (param_precios.shape[0] - 1):
+            dia_fin.append(i)
+
+    dates = [param_escenarios['TimeStamp'][i] for i in range(param_escenarios.shape[0])]
+    d = [i for i in range(param_precios.shape[0]) if df_pe['TimeStamp'][i].date() in dates]
+    pe = param_precios.iloc[d[0]:d[-1] + 1, :]
+
+return
