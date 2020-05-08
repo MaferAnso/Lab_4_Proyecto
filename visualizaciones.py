@@ -15,9 +15,11 @@ import seaborn as sns
 from statsmodels.graphics.tsaplots import plot_acf
 from statsmodels.graphics.tsaplots import plot_pacf
 import numpy as np
-import scipy.stats as st     # Librería estadística
+import scipy.stats as st  # Librería estadística
+
 py.offline.init_notebook_mode(connected=True)
 from plotly.offline import plot
+
 
 # -- -------------------------------------------------------------- FUNCION: Serie de tiempo -- #
 # -- ------------------------------------------------------------------------------------ -- #
@@ -42,6 +44,7 @@ def plot_profit_diario(datos):
                              name='Serie de tiempo del valor Actual', line=dict(color='blue')))
     fig.show()
 
+
 # -- -------------------------------------------------------------- FUNCION: Autocorrelacion -- #
 # -- ------------------------------------------------------------------------------------ -- #
 # -- Grafica que muestrala autocorrelacion y autocorrelacion parcial de la serie de tiempo del valor Actual
@@ -65,6 +68,7 @@ def autocorr(datos):
     ax[1] = plot_pacf(data, ax=ax[1], lags=25)
     ax[2].plot(data)
     return ax[0], ax[1], ax[2]
+
 
 # -- -------------------------------------------------------------- FUNCION: Prueba de normalidad -- #
 # -- ------------------------------------------------------------------------------------ -- #
@@ -107,6 +111,49 @@ def f_normtest(param_data):
     qq = plt.show()
     return hist, qq
 
+
+def f_normt(param_data):
+    """
+    Parameters
+    ----------
+    datos: Muestra los valores del  indicador elegido
+
+    Returns
+    -------
+    Grafica de la serie de tiempo del valor Actual
+
+    Debugging
+    --------
+    param_data = fn.f_leer_archivo(data2)
+    :param param_data:
+    """
+    data = param_data['actual']
+    J = len(data)  # Cantidad de particiones del histograma bins=159
+    [freq_1, x1, p] = plt.hist(data, J, density=True)
+    # Se obvia el último valor de x para obtener exactamente J muestras de x
+    x1 = x1[:-1]
+    mu = np.mean(data)
+    sigma = np.std(data)
+    pi = st.norm.pdf(data, loc=mu, scale=sigma)
+    # Cálculo de la esperanza usando la expresión teórica
+    Ei = x1 * pi
+    # Cálculo teórico de la chi cuadrada
+    x2 = np.sum(list(map(lambda Ei, obs_i: (obs_i - Ei) ** 2 / Ei, Ei, freq_1)))
+    print('Valor de chi cuadrado teorico  = ', x2)
+
+    # Cálculo usando la librería estadística de la chi cuadrada
+    X2 = st.chisquare(freq_1, Ei)
+    print('Valor de chi cuadrado librería = ', X2)
+
+    # Cálculo de Grados de libertad del estadístico
+    p = 2  # Parámetros estimados con los datos
+    m = J - p - 1  # grados de libertad
+
+    Chi_est = st.chi2.ppf(q=0.95, df=m)
+    return 'Estadístico de chi_cuadrado = ', Chi_est, 'Media muestral = ', mu,\
+           '\nDesviación estándar muestral = ', sigma
+
+
 # -- -------------------------------------------------------------- FUNCION: Estacionalidad -- #
 # -- ------------------------------------------------------------------------------------ -- #
 # -- Grafica que muestra la estacionalidad de la serie de tiempo del valor Actual
@@ -128,6 +175,7 @@ def f_seasonality(param_data):
     result = sts.seasonal_decompose(data, freq=30)
     chart = result.plot()
     return plt.show()
+
 
 # -- -------------------------------------------------------------- FUNCION: Detección de atipicos -- #
 # -- ------------------------------------------------------------------------------------ -- #
